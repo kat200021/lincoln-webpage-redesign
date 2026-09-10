@@ -99,7 +99,7 @@
     const y = window.scrollY;
     if (header) {
       header.style.boxShadow = y > 10
-        ? '0 4px 20px rgba(12, 35, 64, 0.10)'
+        ? '0 4px 20px rgba(29, 75, 65, 0.12)'
         : 'none';
     }
     if (backToTop) {
