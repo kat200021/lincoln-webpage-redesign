@@ -146,4 +146,59 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && videoModal && !videoModal.hidden) closeVideo();
   });
+
+  // Smooth in-page anchor scrolling (respects sticky header offset)
+  document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+    const id = anchor.getAttribute('href');
+    if (!id || id === '#') return;
+    const target = document.querySelector(id);
+    if (!target) return;
+
+    anchor.addEventListener('click', (e) => {
+      e.preventDefault();
+      const headerOffset =
+        (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--utility-bar-height'), 10) || 0) +
+        (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-height'), 10) || 0) +
+        16;
+      const top = target.getBoundingClientRect().top + window.scrollY - headerOffset;
+      window.scrollTo({ top, behavior: 'smooth' });
+      if (history.replaceState) history.replaceState(null, '', id);
+    });
+  });
+
+  // Subtle scroll-reveal for interior content sections
+  const revealRoots = document.querySelectorAll('.content-block__body, .content-block__sidebar');
+  if (revealRoots.length && 'IntersectionObserver' in window) {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const targets = [];
+
+    revealRoots.forEach((root) => {
+      if (root.classList.contains('content-block__body')) {
+        root.querySelectorAll(':scope > h2, :scope > p, :scope > ul').forEach((el) => targets.push(el));
+      } else {
+        root.querySelectorAll('.info-card').forEach((el) => targets.push(el));
+      }
+    });
+
+    if (reduceMotion) {
+      targets.forEach((el) => el.classList.add('reveal', 'is-visible'));
+    } else {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          });
+        },
+        { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+      );
+
+      targets.forEach((el, i) => {
+        el.classList.add('reveal');
+        el.style.transitionDelay = Math.min(i * 0.04, 0.28) + 's';
+        observer.observe(el);
+      });
+    }
+  }
 })();
