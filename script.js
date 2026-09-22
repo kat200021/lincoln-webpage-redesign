@@ -1,10 +1,16 @@
 (function () {
   'use strict';
 
+  let chromeBound = false;
+
   function bindSharedChrome() {
-    // Mobile menu (header is injected by include.js)
+    if (chromeBound) return;
     const menuToggle = document.getElementById('menuToggle');
     const nav = document.getElementById('nav');
+    const header = document.getElementById('header');
+    const backToTop = document.getElementById('backToTop');
+    if (!header && !backToTop) return;
+    chromeBound = true;
 
     if (menuToggle && nav) {
       menuToggle.addEventListener('click', () => {
@@ -33,9 +39,6 @@
       });
     }
 
-    const header = document.getElementById('header');
-    const backToTop = document.getElementById('backToTop');
-
     function updateScrollUI() {
       const y = window.scrollY;
       if (header) {
@@ -59,6 +62,11 @@
   }
 
   document.addEventListener('includes:loaded', bindSharedChrome);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindSharedChrome);
+  } else {
+    bindSharedChrome();
+  }
 
   // Hero carousel
   const slides = document.querySelectorAll('.hero__slide');

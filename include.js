@@ -3,24 +3,26 @@
 (async function () {
   const root = new URL('./', document.currentScript.src);
   const [headerHTML, footerHTML] = await Promise.all([
-    fetch(new URL('header.html', root)).then(r => r.text()),
-    fetch(new URL('footer.html', root)).then(r => r.text())
+    fetch(new URL('header.html', root)).then((r) => r.text()),
+    fetch(new URL('footer.html', root)).then((r) => r.text())
   ]);
 
-  document.getElementById('site-header').innerHTML = headerHTML;
-  document.getElementById('site-footer').innerHTML = footerHTML;
+  const headerMount = document.getElementById('site-header');
+  const footerMount = document.getElementById('site-footer');
+  if (headerMount) headerMount.innerHTML = headerHTML;
+  if (footerMount) footerMount.innerHTML = footerHTML;
 
-  const segments = location.pathname.replace(/\\/g, '/').split('/').filter(Boolean);
-  const prefix = segments.length > 1 ? '../' : '';
-  if (prefix) {
-    document.querySelectorAll('#site-header [href], #site-footer [href]').forEach((el) => {
-      const href = el.getAttribute('href');
-      if (!href || /^(https?:|tel:|mailto:|#|\/)/i.test(href)) return;
-      el.setAttribute('href', prefix + href);
-    });
+  // Resolve relative href/src against the site root (where this script lives),
+  // so logos and links work from /, /services/, /team/, /patients/, etc.
+  function rebase(el, attr) {
+    const val = el.getAttribute(attr);
+    if (!val || /^(https?:|tel:|mailto:|#|data:|\/\/|\/)/i.test(val)) return;
+    el.setAttribute(attr, new URL(val, root).href);
   }
 
-  // Highlight the current page's nav link using body[data-page]
+  document.querySelectorAll('#site-header [href], #site-footer [href]').forEach((el) => rebase(el, 'href'));
+  document.querySelectorAll('#site-header [src], #site-footer [src]').forEach((el) => rebase(el, 'src'));
+
   const current = document.body.dataset.page;
   if (current) {
     const link = document.querySelector(`#site-header [data-page="${current}"]`);
@@ -31,7 +33,5 @@
     }
   }
 
-  // Let script.js know the includes are ready, in case it needs to bind
-  // mobile menu / back-to-top listeners after this content exists.
   document.dispatchEvent(new CustomEvent('includes:loaded'));
 })();
